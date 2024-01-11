@@ -14,11 +14,11 @@ process DELLY_CALL {
     tuple val(meta3),   path(fasta)
     tuple val(meta4),   path(fai)
     tuple val(meta4),   path(exclude)
-    val(delly_type)
+    each delly_type
 
     output:
-    tuple val(meta), path("*.bcf"), path("*.bcf.csi")     , emit: sv_output
-    path "versions.yml"                                   , emit: versions
+    tuple val(meta), val(delly_type), path("*.bcf"), path("*.bcf.csi")     , emit: sv_output
+    path "versions.yml"                                                    , emit: versions
 
     script:
     def args = task.ext.args ?: ''
