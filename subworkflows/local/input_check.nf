@@ -3,6 +3,7 @@
 //
 
 include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
+include { SAMTOOLS_HEADER_VIEW as normal_header; SAMTOOLS_HEADER_VIEW as tumor_header} from '../../modules/local/get_bam_header'
 
 workflow INPUT_CHECK {
     take:
@@ -12,33 +13,121 @@ workflow INPUT_CHECK {
     SAMPLESHEET_CHECK ( samplesheet )
         .csv
         .splitCsv ( header:true, sep:',' )
-        .map { create_fastq_channel(it) }
-        .set { reads }
+        .map { create_bam_channel(it) }
+        .set { bam_files }
+    tumor_sample = bam_files
+        .map {
+            new Tuple(it[0],it[1][0])
+        }
+    normal_sample = bam_files
+        .map {
+            new Tuple(it[0],it[1][1])
+        }
+    tumor_header( tumor_sample )
+    normal_header( normal_sample )
+
+    combined_bams = tuple_join(bam_files, tumor_header.out.sample_name)
+    combined_bams = tuple_join(combined_bams,normal_header.out.sample_name )
+
+    bams = combined_bams
+        .map{ set_samplename_meta(it) }
+
+    ch_versions = Channel.empty()
+    ch_versions = ch_versions.mix(SAMPLESHEET_CHECK.out.versions)
+    ch_versions = ch_versions.mix(tumor_header.out.versions)
+    ch_versions = ch_versions.mix(normal_header.out.versions)
 
     emit:
-    reads                                     // channel: [ val(meta), [ reads ] ]
-    versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
+    bams = bams                          // channel: [ val(meta), [ bams ] ]
+    versions = ch_versions               // channel: [ versions.yml ]
 }
 
-// Function to get list of [ meta, [ fastq_1, fastq_2 ] ]
-def create_fastq_channel(LinkedHashMap row) {
+def tuple_join(first, second) {
+    first_channel = first
+        .map{
+            new Tuple(it[0].id,it)
+            }
+    second_channel = second
+        .map{
+            new Tuple(it[0].id,it)
+            }
+    mergedWithKey = first_channel
+        .join(second_channel)
+    merged = mergedWithKey
+        .map{
+            it[1] + it[2][1]
+        }
+    return merged
+
+}
+
+// Function to get list of [ meta, [ tumorBam, normalBam, assay, normalType ] ]
+def create_bam_channel(LinkedHashMap row) {
     // create meta map
     def meta = [:]
-    meta.id         = row.sample
-    meta.single_end = row.single_end.toBoolean()
+    meta.id         = row.pairId
+    meta.assay      = row.assay
+    meta.normalType = row.normalType
 
-    // add path(s) of the fastq file(s) to the meta map
-    def fastq_meta = []
-    if (!file(row.fastq_1).exists()) {
-        exit 1, "ERROR: Please check input samplesheet -> Read 1 FastQ file does not exist!\n${row.fastq_1}"
+    // add path(s) of the bam files to the meta map
+    def bams = []
+    def bedFile = null
+    if (!file(row.tumorBam).exists()) {
+        exit 1, "ERROR: Please check input samplesheet -> Tumor BAM file does not exist!\n${row.tumorBam}"
     }
-    if (meta.single_end) {
-        fastq_meta = [ meta, [ file(row.fastq_1) ] ]
-    } else {
-        if (!file(row.fastq_2).exists()) {
-            exit 1, "ERROR: Please check input samplesheet -> Read 2 FastQ file does not exist!\n${row.fastq_2}"
+    if (!file(row.normalBam).exists()) {
+        exit 1, "ERROR: Please check input samplesheet -> Normal BAM file does not exist!\n${row.normalBam}"
+    }
+
+    def tumorBai = "${row.tumorBam}.bai"
+    def normalBai = "${row.normalBam}.bai"
+    def tumorBaiAlt = "${row.tumorBam}".replaceAll('bam$', 'bai')
+    def normalBaiAlt = "${row.normalBam}".replaceAll('bam$', 'bai')
+
+    def foundTumorBai = ""
+    def foundNormalBai = ""
+
+
+    if (file(tumorBai).exists()) {
+        foundTumorBai = tumorBai
+    }
+    else{
+        if(file(tumorBaiAlt).exists()){
+            foundTumorBai = tumorBaiAlt
         }
-        fastq_meta = [ meta, [ file(row.fastq_1), file(row.fastq_2) ] ]
+        else{
+        exit 1, "ERROR: Please verify inputs -> Tumor BAI file does not exist!\n${row.tumorBam}"
+        }
     }
-    return fastq_meta
+    if (file(normalBai).exists()) {
+        foundNormalBai = normalBai
+    }
+    else{
+        if(file(normalBaiAlt).exists()){
+            foundNormalBai = normalBaiAlt
+        }
+        else{
+            exit 1, "ERROR: Please verify inputs -> Normal BAI file does not exist!\n${row.normalBam}"
+        }
+    }
+
+
+    bams = [ meta, [ file(row.tumorBam), file(row.normalBam) ], [ file(foundTumorBai), file(foundNormalBai) ]]
+    return bams
+}
+
+def set_samplename_meta(List bams) {
+    meta = bams[0]
+    def tumorSample = bams[3]
+    def normalSample = bams[4]
+    if( tumorSample == null || tumorSample.isEmpty() ){
+        exit 1, "ERROR: No sample name found for tumor sample, please make sure the SM tag is set in the bam\n${tumorBam}"
+    }
+    if( normalSample == null || normalSample.isEmpty() ){
+        exit 1, "ERROR: No sample name found for normal sample, please make sure the SM tag is set in the bam\n${normalBam}"
+    }
+    meta.tumorSampleName = tumorSample.trim()
+    meta.normalSampleName = normalSample.trim()
+    return [ meta, bams[1], bams[2] ]
+
 }
