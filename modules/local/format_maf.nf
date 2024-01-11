@@ -8,6 +8,8 @@ process FORMAT_MAF {
         'docker://mskcc/alpine:3.19-with-bash':
         'docker.io/mskcc/alpine:3.19-with-bash' }"
 
+    containerOptions "--bind $projectDir"
+
     input:
     tuple val(meta),  path(inputMaf)
 
@@ -20,8 +22,7 @@ process FORMAT_MAF {
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    export SINGULARITY_BIND="$projectDir"
-    ./$projectDir/bin/format_maf.sh \\
+    $projectDir/bin/format_maf.sh \\
         ${prefix} \\
         ${inputMaf}
 
