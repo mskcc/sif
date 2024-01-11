@@ -12,14 +12,14 @@ process BCFTOOLS_CONCAT {
     tuple val(meta), path(inputVcfs), path(inputVcfTbis)
 
     output:
-    tuple val(meta), path("*.vcf.gz")  , emit: vcf
+    tuple val(meta), path("*.vcf")  , emit: vcf
     path "versions.yml"                , emit: versions
 
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def input_vcfs = inputVcfs.join(" ")
-    def output_vcf = "${prefix}.combined-variants.vcf.gz"
+    def output_vcf = "${prefix}.combined.svs.vcf"
     """
     /usr/bin/bcftools concat \\
         ${input_vcfs} \\
@@ -37,7 +37,7 @@ process BCFTOOLS_CONCAT {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.combined-variants.vcf.gz
+    touch ${prefix}.combined.svs.vcf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
