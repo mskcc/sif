@@ -35,8 +35,9 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
+
 include { INPUT_CHECK } from '../subworkflows/local/input_check'
-include { SV } from '../subworkflows/local/sv'
+include { SV }          from '../subworkflows/local/sv'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,13 +74,15 @@ workflow SIF {
     }
     ch_fasta_fai_ref = Channel.value([ "reference_genome_index",ref_index_list])
     ch_delly_exclude = Channel.value([ "delly_exclude", file(params.delly_exclude) ])
+    ch_exac_filter = Channel.value(["exac_filter", file(params.exac_filter)])
+    ch_exac_filter_index = Channel.value(["exac_filter_index", file(params.exac_filter_index)])
     ch_normal = INPUT_CHECK.out.bams
         .map{
-            new Tuple(it[0],it[1][0], it[1][1])
+            new Tuple(it[0],it[1][1], it[2][1])
         }
     ch_tumor = INPUT_CHECK.out.bams
         .map{
-            new Tuple(it[0],it[2][0], it[2][1])
+            new Tuple(it[0],it[1][0], it[2][0])
         }
 
     SV (
@@ -87,8 +90,10 @@ workflow SIF {
         ch_tumor,
         ch_fasta_ref,
         ch_fasta_fai_ref,
-        ch_delly_exclude
-        params.delly_type
+        ch_delly_exclude,
+        params.delly_type,
+        ch_exac_filter,
+        ch_exac_filter_index
     )
 
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
