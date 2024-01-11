@@ -3,6 +3,8 @@ include { DELLY_FILTER } from '../../modules/local/delly_filter'
 include { BCFTOOLS_CONCAT as concat_sv; BCFTOOLS_CONCAT as concat_filtered_sv} from '../../modules/local/bcftools_concat'
 include { VCF2MAF } from '../../modules/local/vcf2maf'
 include { FORMAT_MAF } from '../../modules/local/format_maf'
+include { GET_TOOL_VERSION } from '../../modules/local/get_tool_version'
+include { ADD_MAF_COMMENT } from '../../modules/local/add_maf_comment'
 
 
 workflow SV {
@@ -67,6 +69,17 @@ workflow SV {
         ch_exac_filter_index
     )
 
+    delly_tool = Channel.value("delly")
+
+    GET_TOOL_VERSION (
+        delly_tool,
+        DELLY_CALL.out.versions
+    )
+
+    ADD_MAF_COMMENT (
+        VCF2MAF.out.maf,
+        delly_tool,
+        GET_TOOL_VERSION.out.tool_version
     )
 
     FORMAT_MAF (
@@ -74,16 +87,19 @@ workflow SV {
     )
 
     ch_versions = Channel.empty()
-    ch_versions = ch_versions.mix(DELLY.out.versions)
+    ch_versions = ch_versions.mix(DELLY_CALL.out.versions)
+    ch_versions = ch_versions.mix(DELLY_FILTER.out.versions)
     ch_versions = ch_versions.mix(concat_sv.out.versions)
     ch_versions = ch_versions.mix(concat_filtered_sv.out.versions)
     ch_versions = ch_versions.mix(VCF2MAF.out.versions)
+    ch_versions = ch_versions.mix(GET_TOOL_VERSION.out.versions)
+    ch_versions = ch_versions.mix(ADD_MAF_COMMENT.out.versions)
     ch_versions = ch_versions.mix(FORMAT_MAF.out.versions)
 
     emit:
     sv = concat_sv.out.vcf
     sv_filtered = concat_filtered_sv.out.vcf
-    maf_file = VCF2MAF.out.maf
+    maf_file = ADD_MAF_COMMENT.out.maf
     portal = FORMAT_MAF.out.portal
     versions = ch_versions
 }
