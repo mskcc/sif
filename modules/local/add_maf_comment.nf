@@ -6,6 +6,8 @@ process ADD_MAF_COMMENT {
         'docker://mskcc/alpine:3.19-with-bash':
         'docker.io/mskcc/alpine:3.19-with-bash' }"
 
+    publishDir "${params.outdir}/${meta.id}/", pattern: "${meta.id}.*", mode: params.publish_dir_mode
+
     containerOptions "--bind $projectDir"
 
     input:

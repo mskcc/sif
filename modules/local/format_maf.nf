@@ -10,6 +10,8 @@ process FORMAT_MAF {
 
     containerOptions "--bind $projectDir"
 
+    publishDir "${params.outdir}/${meta.id}/", pattern: "${meta.id}.portal.txt", mode: params.publish_dir_mode
+
     input:
     tuple val(meta),  path(inputMaf)
 
