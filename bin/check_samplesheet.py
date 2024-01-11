@@ -24,9 +24,7 @@ class RowChecker:
 
     """
 
-    VALID_FORMATS = (
-        ".bam"
-    )
+    VALID_FORMATS = ".bam"
 
     def __init__(
         self,
@@ -46,12 +44,12 @@ class RowChecker:
 
         """
         super().__init__(**kwargs)
-        self._pairId=pairId
-        self._tumorBam=tumorBam
-        self._normalBam=normalBam
-        self._assay=assay
-        self._normalType=normalType
-        self._bedFile=bedFile
+        self._pairId = pairId
+        self._tumorBam = tumorBam
+        self._normalBam = normalBam
+        self._assay = assay
+        self._normalType = normalType
+        self._bedFile = bedFile
         self._seen = set()
         self.modified = []
 
@@ -83,7 +81,7 @@ class RowChecker:
 
     def _validate_bams(self, row):
         """Assert that the first FASTQ entry is non-empty and has the right format."""
-        if len(row[self._tumorBam]) <= 0  or len(row[self._normalBam]) <= 0:
+        if len(row[self._tumorBam]) <= 0 or len(row[self._normalBam]) <= 0:
             raise AssertionError("Both bam files are required.")
         self._validate_bam_format(row[self._tumorBam])
         self._validate_bam_format(row[self._normalBam])
@@ -165,10 +163,10 @@ def check_samplesheet(file_in, file_out):
             SAMPLE_TUMOR.SAMPLE_NORMAL,BAM_TUMOR,BAM_NORMAL,BAITS,NORMAL_TYPE,BED_FILE
 
     """
-    required_columns = {"pairId","tumorBam","normalBam","assay","normalType","bedFile"}
+    required_columns = {"pairId", "tumorBam", "normalBam", "assay", "normalType", "bedFile"}
     # See https://docs.python.org/3.9/library/csv.html#id3 to read up on `newline=""`.
     with file_in.open(newline="") as in_handle:
-        reader = csv.DictReader(in_handle, dialect=sniff_format(in_handle),delimiter=',')
+        reader = csv.DictReader(in_handle, dialect=sniff_format(in_handle), delimiter=",")
         # Validate the existence of the expected header columns.
         if not required_columns.issubset(reader.fieldnames):
             req_cols = ", ".join(required_columns)
