@@ -9,8 +9,7 @@ process DELLY_FILTER {
         'docker.io/mskcc/delly:1.2.6' }"
 
     input:
-    tuple val(meta), path(sv_output), path(sv_index)
-    val(delly_type)
+    tuple val(meta), val(delly_type), path(sv_output), path(sv_index)
 
     output:
     tuple val(meta), path("*.bcf"), path("*.bcf.csi")     , emit: sv_pass_output
@@ -19,17 +18,33 @@ process DELLY_FILTER {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def pair_file_contents = "${meta.tumorSampleName}\ttumor\n${meta.normalSampleName}\tcontrol"
     def pair_file_name = "tn_pair.txt"
 
     """
-    echo "${pair_file_contents}" > "${pair_file_name}"
+    cat <<-END_PAIR > ${pair_file_name}
+    ${meta.tumorSampleName} tumor
+    ${meta.normalSampleName}    control
+    END_PAIR
+
     /opt/delly/bin/delly \\
         filter \\
         ${args} \\
-        --svtype ${type} \\
-        --outfile ${prefix}.pass.bcf \\
+        --samples ${pair_file_name} \\
+        --outfile ${prefix}.${delly_type}.pass.bcf \\
         ${sv_output}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        delly: 1.2.6
+        htslib: 1.15.1
+    END_VERSIONS
+    """
+
+    stub:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${prefix}.${delly_type}.pass.bcf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
