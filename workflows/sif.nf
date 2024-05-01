@@ -36,7 +36,6 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
 include { SV }          from '../subworkflows/local/sv'
 
 /*
@@ -58,14 +57,17 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoft
 
 workflow SIF {
 
+    take:
+    ch_bams
+
+    main:
+
     ch_versions = Channel.empty()
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
-    INPUT_CHECK (
-        file(params.input)
-    )
+
 
     ch_fasta_ref = Channel.value([ "reference_genome", file(params.fasta) ])
     ref_index_list = []
@@ -76,11 +78,11 @@ workflow SIF {
     ch_delly_exclude = Channel.value([ "delly_exclude", file(params.delly_exclude) ])
     ch_exac_filter = Channel.value(["exac_filter", file(params.exac_filter)])
     ch_exac_filter_index = Channel.value(["exac_filter_index", file(params.exac_filter_index)])
-    ch_normal = INPUT_CHECK.out.bams
+    ch_normal = ch_bams
         .map{
             new Tuple(it[0],it[1][1], it[2][1])
         }
-    ch_tumor = INPUT_CHECK.out.bams
+    ch_tumor = ch_bams
         .map{
             new Tuple(it[0],it[1][0], it[2][0])
         }
@@ -96,12 +98,19 @@ workflow SIF {
         ch_exac_filter_index
     )
 
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
     ch_versions = ch_versions.mix(SV.out.versions)
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
+
+    emit:
+    sv = SV.out.sv
+    sv_filtered = SV.out.sv_filtered
+    maf_file = SV.out.maf_file
+    portal = SV.out.portal
+    versions = ch_versions
+
 }
 
 /*

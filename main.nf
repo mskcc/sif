@@ -51,12 +51,17 @@ WorkflowMain.initialise(workflow, params, log)
 */
 
 include { SIF } from './workflows/sif'
+include { INPUT_CHECK } from './subworkflows/local/input_check'
 
 //
 // WORKFLOW: Run main mskcc/sif analysis pipeline
 //
 workflow MSKCC_SIF {
-    SIF ()
+
+    INPUT_CHECK (
+        file(params.input)
+    )
+    SIF (INPUT_CHECK.out.bams)
 }
 
 /*
