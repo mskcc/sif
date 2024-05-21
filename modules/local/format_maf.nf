@@ -8,8 +8,6 @@ process FORMAT_MAF {
         'docker://mskcc/alpine:3.19-with-bash':
         'docker.io/mskcc/alpine:3.19-with-bash' }"
 
-    containerOptions "--bind $projectDir"
-
     publishDir "${params.outdir}/${meta.id}/", pattern: "${meta.id}.portal.txt", mode: params.publish_dir_mode
 
     input:
@@ -24,7 +22,7 @@ process FORMAT_MAF {
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    $projectDir/bin/format_maf.sh \\
+    format_maf.sh \\
         ${prefix} \\
         ${inputMaf}
 
