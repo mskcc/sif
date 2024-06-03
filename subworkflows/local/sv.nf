@@ -2,10 +2,9 @@ include { DELLY_CALL } from '../../modules/local/delly_call'
 include { DELLY_FILTER } from '../../modules/local/delly_filter'
 include { BCFTOOLS_CONCAT as BCFTOOLS_CONCAT_SV; BCFTOOLS_CONCAT as BCFTOOLS_CONCAT_FILTERED_SV } from '../../modules/local/bcftools_concat'
 include { VCF2MAF } from '../../modules/local/vcf2maf'
-include { FORMAT_MAF } from '../../modules/local/format-maf/main'
+include { FORMAT_MAF } from '../../modules/local/format-maf'
 include { GET_TOOL_VERSION } from '../../modules/local/get_tool_version'
 include { ADD_MAF_COMMENT } from '../../modules/local/add-maf-comment/main'
-
 
 workflow SV {
     take:

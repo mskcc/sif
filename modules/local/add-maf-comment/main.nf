@@ -8,6 +8,7 @@ process ADD_MAF_COMMENT {
 
     publishDir "${params.outdir}/${meta.id}/", pattern: "${meta.id}.*", mode: params.publish_dir_mode
 
+
     input:
     tuple val(meta), path(input_maf)
     val(tool_name)
