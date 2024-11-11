@@ -8,7 +8,6 @@ process ADD_MAF_COMMENT {
 
     publishDir "${params.outdir}/${meta.id}/", pattern: "${meta.id}.*", mode: params.publish_dir_mode
 
-    containerOptions "--bind $projectDir"
 
     input:
     tuple val(meta), path(input_maf)
@@ -26,7 +25,7 @@ process ADD_MAF_COMMENT {
     def tool_version_trim = "${tool_version}".trim()
 
     """
-    $projectDir/bin/concat_with_comments.sh \\
+    concat_with_comments.sh \\
         ${tool_name_trim} \\
         ${tool_version_trim} \\
         ${prefix}.svs.maf \\

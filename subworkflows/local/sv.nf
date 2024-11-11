@@ -1,11 +1,10 @@
 include { DELLY_CALL } from '../../modules/local/delly_call'
 include { DELLY_FILTER } from '../../modules/local/delly_filter'
-include { BCFTOOLS_CONCAT as concat_sv; BCFTOOLS_CONCAT as concat_filtered_sv} from '../../modules/local/bcftools_concat'
+include { BCFTOOLS_CONCAT as BCFTOOLS_CONCAT_SV; BCFTOOLS_CONCAT as BCFTOOLS_CONCAT_FILTERED_SV } from '../../modules/local/bcftools_concat'
 include { VCF2MAF } from '../../modules/local/vcf2maf'
-include { FORMAT_MAF } from '../../modules/local/format_maf'
+include { FORMAT_MAF } from '../../modules/local/format-maf'
 include { GET_TOOL_VERSION } from '../../modules/local/get_tool_version'
-include { ADD_MAF_COMMENT } from '../../modules/local/add_maf_comment'
-
+include { ADD_MAF_COMMENT } from '../../modules/local/add-maf-comment/main'
 
 workflow SV {
     take:
@@ -53,16 +52,16 @@ workflow SV {
             new Tuple(it[1][0],it[2], it[3])
     }
 
-    concat_sv (
+    BCFTOOLS_CONCAT_SV (
         combined_sv
     )
 
-    concat_filtered_sv (
+    BCFTOOLS_CONCAT_FILTERED_SV (
         combined_filtered_sv
     )
 
     VCF2MAF (
-        concat_filtered_sv.out.vcf,
+        BCFTOOLS_CONCAT_FILTERED_SV.out.vcf,
         ch_fasta_ref,
         ch_fasta_fai_ref,
         ch_exac_filter,
@@ -89,16 +88,16 @@ workflow SV {
     ch_versions = Channel.empty()
     ch_versions = ch_versions.mix(DELLY_CALL.out.versions)
     ch_versions = ch_versions.mix(DELLY_FILTER.out.versions)
-    ch_versions = ch_versions.mix(concat_sv.out.versions)
-    ch_versions = ch_versions.mix(concat_filtered_sv.out.versions)
+    ch_versions = ch_versions.mix(BCFTOOLS_CONCAT_SV.out.versions)
+    ch_versions = ch_versions.mix(BCFTOOLS_CONCAT_FILTERED_SV.out.versions)
     ch_versions = ch_versions.mix(VCF2MAF.out.versions)
     ch_versions = ch_versions.mix(GET_TOOL_VERSION.out.versions)
     ch_versions = ch_versions.mix(ADD_MAF_COMMENT.out.versions)
     ch_versions = ch_versions.mix(FORMAT_MAF.out.versions)
 
     emit:
-    sv = concat_sv.out.vcf
-    sv_filtered = concat_filtered_sv.out.vcf
+    sv = BCFTOOLS_CONCAT_SV.out.vcf
+    sv_filtered = BCFTOOLS_CONCAT_SV.out.vcf
     maf_file = ADD_MAF_COMMENT.out.maf
     portal = FORMAT_MAF.out.portal
     versions = ch_versions
