@@ -99,7 +99,7 @@ workflow SV {
 
     emit:
     sv = BCFTOOLS_CONCAT_SV.out.vcf
-    sv_filtered = BCFTOOLS_CONCAT_SV.out.vcf
+    sv_filtered = BCFTOOLS_CONCAT_FILTERED_SV.out.vcf
     maf_file = ADD_MAF_COMMENT.out.maf
     portal = FORMAT_MAF.out.portal
     versions = ch_versions
