@@ -10,6 +10,7 @@ process BCFTOOLS_CONCAT {
 
     input:
     tuple val(meta), path(inputVcfs), path(inputVcfTbis)
+    val(outputSuffix)
 
     output:
     tuple val(meta), path("*.vcf")  , emit: vcf
@@ -19,7 +20,7 @@ process BCFTOOLS_CONCAT {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def input_vcfs = inputVcfs.join(" ")
-    def output_vcf = "${prefix}.combined.svs.vcf"
+    def output_vcf = "${prefix}.combined.svs.${outputSuffix}.vcf"
     """
     /usr/bin/bcftools concat \\
         ${input_vcfs} \\

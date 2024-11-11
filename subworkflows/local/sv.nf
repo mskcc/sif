@@ -53,11 +53,13 @@ workflow SV {
     }
 
     BCFTOOLS_CONCAT_SV (
-        combined_sv
+        combined_sv,
+        "unfiltered"
     )
 
     BCFTOOLS_CONCAT_FILTERED_SV (
-        combined_filtered_sv
+        combined_filtered_sv,
+        "filtered"
     )
 
     VCF2MAF (
